@@ -1,0 +1,9 @@
+{
+  "name": "spidertanks",
+  "version": "0.0.0",
+  "title": "Spidertanks",
+  "description": "Gives the tank legs when you put exoskeleton equipment into it",
+  "author": "codemob",
+  "factorio_version": "2.1",
+  "dependencies": []
+}
