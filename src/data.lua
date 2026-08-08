@@ -13,20 +13,20 @@ local function base_leg_index_for_angle(degrees)
 end
 
 
-local function generate_leg_at_position(mount_x, mount_y, index)
+local function generate_leg_at_position(mount_x, mount_y, index, leg_count, leg_type)
     local angle = math.deg(math.atan2(mount_y, mount_x))
     local base_leg_index = base_leg_index_for_angle(angle)
     local ground_x = mount_x / 12
-    local ground_y = mount_y / 24
+    local ground_y = mount_y / 16
     return {
-        leg = "spidertron-leg-" .. base_leg_index,
+        leg = leg_type .. "-leg-" .. base_leg_index,
         mount_position = util.by_pixel(mount_x, mount_y),
         ground_position = {ground_x, ground_y},
-        walking_group = index%2 + 1
+        walking_group = (index - 1)%math.min(4, leg_count/2) + 1
     }
 end
 
-local function generate_legs(leg_count, width, offset)
+local function generate_legs(leg_count, width, offset, leg_type)
     local legs = {}
     for i = 1, leg_count do
         local mount_x = -25.0
@@ -38,9 +38,15 @@ local function generate_legs(leg_count, width, offset)
             local position = ((i - 1)%(leg_count/2))/(leg_count/2 - 1)
             mount_y = position * width - offset
         end
-        table.insert(legs, generate_leg_at_position(mount_x, mount_y, i))
+        table.insert(legs, generate_leg_at_position(mount_x, mount_y, i, leg_count, leg_type))
     end
     return legs
+end
+
+for i = 1, 8 do
+    local new_leg = table.deepcopy(data.raw["spider-leg"]["spidertron-leg-" .. i])
+    new_leg.name = "tank-leg-" .. i
+    data.extend({new_leg})
 end
 
 for i = 1,15 do
@@ -73,47 +79,56 @@ for i = 1,15 do
     legged_tank.chain_shooting_cooldown_modifier = 0
 
     legged_tank.spider_engine = {
-        legs = generate_legs(n, 60, 30)
+        legs = generate_legs(n, 60, 30, "tank"),
+        walking_group_overlap = 1 - 2/math.max(n - 4, 2),
     }
 
     data:extend({legged_tank})
 end
 
 if mods["car-equipment"] then
+    for i = 1,8 do
+        local new_leg = table.deepcopy(data.raw["spider-leg"]["spidertron-leg-" .. i])
+        new_leg.initial_movement_speed = new_leg.initial_movement_speed*50
+        new_leg.name = "car-leg-" .. i
+        data.extend({new_leg})
+    end
+
     for i = 1,15 do
-    ---@type SpiderVehiclePrototype|CarPrototype
-    local legged_car = table.deepcopy(data.raw["car"]["car"])
-    local n = i * 2
+        ---@type SpiderVehiclePrototype|CarPrototype
+        local legged_car = table.deepcopy(data.raw["car"]["car"])
+        local n = i * 2
 
-    legged_car.name = "car-" .. n
+        legged_car.name = "car-" .. n
 
-    legged_car.localised_name = {"entity-name.car"}
-    legged_car.localised_description = {"entity-description.car"}
-    legged_car.hidden = true
-    legged_car.type = "spider-vehicle"
-    legged_car.height = 1
-    legged_car.graphics_set = {
-        light = legged_car.light,
-        base_animation = legged_car.animation,
-        animation = legged_car.turret_animation,
-    }
-    legged_car.graphics_set.shadow_base_animation = legged_car.graphics_set.base_animation.layers[3]
-    legged_car.graphics_set.base_animation.layers[3] = nil
-    legged_car.graphics_set.shadow_animation = legged_car.graphics_set.animation.layers[3]
-    legged_car.graphics_set.animation.layers[3] = nil
-    
-    legged_car.graphics_set.base_render_layer = "higher-object-above"
-    legged_car.graphics_set.render_layer = "train-stop-top"
-    legged_car.torso_rotation_speed = legged_car.rotation_speed
-    legged_car.movement_energy_consumption = legged_car.consumption
-    legged_car.automatic_weapon_cycling = false
-    legged_car.chain_shooting_cooldown_modifier = 0
+        legged_car.localised_name = {"entity-name.car"}
+        legged_car.localised_description = {"entity-description.car"}
+        legged_car.hidden = true
+        legged_car.type = "spider-vehicle"
+        legged_car.height = 1
+        legged_car.graphics_set = {
+            light = legged_car.light,
+            base_animation = legged_car.animation,
+            animation = legged_car.turret_animation,
+        }
+        legged_car.graphics_set.shadow_base_animation = legged_car.graphics_set.base_animation.layers[3]
+        legged_car.graphics_set.base_animation.layers[3] = nil
+        legged_car.graphics_set.shadow_animation = legged_car.graphics_set.animation.layers[3]
+        legged_car.graphics_set.animation.layers[3] = nil
+        
+        legged_car.graphics_set.base_render_layer = "higher-object-above"
+        legged_car.graphics_set.render_layer = "train-stop-top"
+        legged_car.torso_rotation_speed = legged_car.rotation_speed
+        legged_car.movement_energy_consumption = legged_car.consumption
+        legged_car.automatic_weapon_cycling = false
+        legged_car.chain_shooting_cooldown_modifier = 0
 
-    legged_car.spider_engine = {
-        legs = generate_legs(n, 50, 30)
-    }
+        legged_car.spider_engine = {
+            legs = generate_legs(n, 50, 30, "car"),
+            walking_group_overlap = 1 - 2/math.max(n - 4, 2),
+        }
 
-    data:extend({legged_car})
-end
+        data:extend({legged_car})
+    end
 end
 
