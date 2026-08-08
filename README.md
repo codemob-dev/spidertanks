@@ -2,6 +2,7 @@ Adds legs to the tank when you give it legs.
 
 # Features:
 * Spidertaaank, spidertaaank, does whatever a spidertank does...
+* Spidercar? Only with the [car-equipment](https://mods.factorio.com/mod/car-equipment) mod!
 
 # Compatibility
 This mod is probably not compatible with other mods that modify the tank's functionality or appearance because of the limitations of the modding engine.

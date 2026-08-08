@@ -14,7 +14,7 @@ end
 
 
 local function generate_leg_at_position(mount_x, mount_y, index)
-    local angle = math.deg(math.atan(mount_y, mount_x))
+    local angle = math.deg(math.atan2(mount_y, mount_x))
     local base_leg_index = base_leg_index_for_angle(angle)
     local ground_x = mount_x / 12
     local ground_y = mount_y / 24
@@ -26,7 +26,7 @@ local function generate_leg_at_position(mount_x, mount_y, index)
     }
 end
 
-local function generate_legs(leg_count)
+local function generate_legs(leg_count, width, offset)
     local legs = {}
     for i = 1, leg_count do
         local mount_x = -25.0
@@ -36,7 +36,7 @@ local function generate_legs(leg_count)
         local mount_y = 0
         if leg_count > 2 then
             local position = ((i - 1)%(leg_count/2))/(leg_count/2 - 1)
-            mount_y = position * 60.0 - 30.0
+            mount_y = position * width - offset
         end
         table.insert(legs, generate_leg_at_position(mount_x, mount_y, i))
     end
@@ -44,6 +44,7 @@ local function generate_legs(leg_count)
 end
 
 for i = 1,15 do
+    ---@type SpiderVehiclePrototype|CarPrototype
     local legged_tank = table.deepcopy(data.raw["car"]["tank"])
     local n = i * 2
 
@@ -63,11 +64,7 @@ for i = 1,15 do
     legged_tank.graphics_set.base_animation.layers[3] = nil
     legged_tank.graphics_set.shadow_animation = legged_tank.graphics_set.animation.layers[3]
     legged_tank.graphics_set.animation.layers[3] = nil
-    --legged_tank.graphics_set.animation.layers[3].shift[1] = legged_tank.graphics_set.animation.layers[3].shift[1] + legged_tank.height
-    --legged_tank.graphics_set.animation.layers[3].shift[2] = legged_tank.graphics_set.animation.layers[3].shift[2] + legged_tank.height
-    --legged_tank.graphics_set.base_animation.layers[3].shift[1] = legged_tank.graphics_set.base_animation.layers[3].shift[1] + legged_tank.height
-    --legged_tank.graphics_set.base_animation.layers[3].shift[2] = legged_tank.graphics_set.base_animation.layers[3].shift[2] + legged_tank.height
-
+    
     legged_tank.graphics_set.base_render_layer = "higher-object-above"
     legged_tank.graphics_set.render_layer = "train-stop-top"
     legged_tank.torso_rotation_speed = legged_tank.rotation_speed
@@ -76,9 +73,47 @@ for i = 1,15 do
     legged_tank.chain_shooting_cooldown_modifier = 0
 
     legged_tank.spider_engine = {
-        legs = generate_legs(n)
+        legs = generate_legs(n, 60, 30)
     }
 
     data:extend({legged_tank})
+end
+
+if mods["car-equipment"] then
+    for i = 1,15 do
+    ---@type SpiderVehiclePrototype|CarPrototype
+    local legged_car = table.deepcopy(data.raw["car"]["car"])
+    local n = i * 2
+
+    legged_car.name = "car-" .. n
+
+    legged_car.localised_name = {"entity-name.car"}
+    legged_car.localised_description = {"entity-description.car"}
+    legged_car.hidden = true
+    legged_car.type = "spider-vehicle"
+    legged_car.height = 1
+    legged_car.graphics_set = {
+        light = legged_car.light,
+        base_animation = legged_car.animation,
+        animation = legged_car.turret_animation,
+    }
+    legged_car.graphics_set.shadow_base_animation = legged_car.graphics_set.base_animation.layers[3]
+    legged_car.graphics_set.base_animation.layers[3] = nil
+    legged_car.graphics_set.shadow_animation = legged_car.graphics_set.animation.layers[3]
+    legged_car.graphics_set.animation.layers[3] = nil
+    
+    legged_car.graphics_set.base_render_layer = "higher-object-above"
+    legged_car.graphics_set.render_layer = "train-stop-top"
+    legged_car.torso_rotation_speed = legged_car.rotation_speed
+    legged_car.movement_energy_consumption = legged_car.consumption
+    legged_car.automatic_weapon_cycling = false
+    legged_car.chain_shooting_cooldown_modifier = 0
+
+    legged_car.spider_engine = {
+        legs = generate_legs(n, 50, 30)
+    }
+
+    data:extend({legged_car})
+end
 end
 

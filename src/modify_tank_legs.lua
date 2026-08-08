@@ -1,13 +1,13 @@
-local function transfer_inventory(old_tank, new_tank, tank_inventory, spider_inventory)
+local function transfer_inventory(old_tank, new_tank, tank_inventory, spider_inventory, base_name)
     local old_inventory
-    if old_tank.name == "tank" then
+    if old_tank.name == base_name then
         old_inventory = old_tank.get_inventory(tank_inventory)
     else
         old_inventory = old_tank.get_inventory(spider_inventory)
     end
     
     local new_inventory
-    if new_tank.name == "tank" then
+    if new_tank.name == base_name then
         new_inventory = new_tank.get_inventory(tank_inventory)
     else
         new_inventory = new_tank.get_inventory(spider_inventory)
@@ -21,12 +21,12 @@ local function transfer_inventory(old_tank, new_tank, tank_inventory, spider_inv
     end
 end
 
-local function modify_tank_legs(grid)
+local function modify_tank_legs(grid, base_name)
     local old_tank = grid.entity_owner
     if old_tank == nil then
         return
     end
-    if old_tank.name:sub(1, #"tank") ~= "tank" then
+    if old_tank.name:sub(1, #base_name) ~= base_name then
         return
     end
     if currently_modified_tanks[old_tank.unit_number] ~= nil then
@@ -40,9 +40,12 @@ local function modify_tank_legs(grid)
     end
     local target_entity_name
     if target_num == 0 then
-        target_entity_name = "tank"
+        target_entity_name = base_name
     else
-        target_entity_name = "tank-" .. target_num
+        target_entity_name = base_name .. "-" .. target_num
+    end
+    if old_tank.name == target_entity_name then
+        return
     end
     local new_tank = old_tank.surface.create_entity{
         name = target_entity_name,
@@ -57,15 +60,17 @@ local function modify_tank_legs(grid)
 
     new_tank.copy_settings(old_tank)
 
-    if (target_num == 0 or old_tank.name == "tank") and not (target_num == 0 and old_tank.name == "tank") then
+    if (target_num == 0 or old_tank.name == base_name) and not (target_num == 0 and old_tank.name == base_name) then
         local old_logistic_sections = old_tank.get_logistic_sections()
         local new_logistic_sections = new_tank.get_logistic_sections()
-        new_logistic_sections.remove_section(1)
-        for _, old_section in ipairs(old_logistic_sections.sections) do
-            local new_section = new_logistic_sections.add_section(old_section.group)
-            new_section.filters = old_section.filters
-            new_section.active = old_section.active
-            new_section.multiplier = old_section.multiplier
+        if old_logistic_sections and new_logistic_sections then
+            new_logistic_sections.remove_section(1)
+            for _, old_section in ipairs(old_logistic_sections.sections) do
+                local new_section = new_logistic_sections.add_section(old_section.group)
+                new_section.filters = old_section.filters
+                new_section.active = old_section.active
+                new_section.multiplier = old_section.multiplier
+            end
         end
     end
 
@@ -93,10 +98,14 @@ local function modify_tank_legs(grid)
     new_tank.set_driver(old_tank.get_driver())
     new_tank.set_passenger(old_tank.get_passenger())
 
-    transfer_inventory(old_tank, new_tank, defines.inventory.car_trunk, defines.inventory.spider_trunk)
-    transfer_inventory(old_tank, new_tank, defines.inventory.car_ammo, defines.inventory.spider_ammo)
-    transfer_inventory(old_tank, new_tank, defines.inventory.car_trash, defines.inventory.spider_trash)
-    transfer_inventory(old_tank, new_tank, defines.inventory.fuel, defines.inventory.fuel)
+    transfer_inventory(old_tank, new_tank, defines.inventory.car_trunk, defines.inventory.spider_trunk, base_name)
+    transfer_inventory(old_tank, new_tank, defines.inventory.car_ammo, defines.inventory.spider_ammo, base_name)
+    transfer_inventory(old_tank, new_tank, defines.inventory.car_trash, defines.inventory.spider_trash, base_name)
+    transfer_inventory(old_tank, new_tank, defines.inventory.fuel, defines.inventory.fuel, base_name)
+
+    new_tank.burner.currently_burning = old_tank.burner.currently_burning
+    new_tank.burner.remaining_burning_fuel  = old_tank.burner.remaining_burning_fuel
+    new_tank.burner.heat = old_tank.burner.heat
 
     new_tank.health = old_tank.health
 
