@@ -33,9 +33,9 @@ local function modify_tank_legs(grid)
         return
     end
     local target_num = 0
-    for _, equipment in ipairs(grid.get_contents()) do
+    for _, equipment in ipairs(grid.equipment) do
         if equipment.name == "exoskeleton-equipment" then
-            target_num = target_num + equipment.count * 2
+            target_num = target_num + 2
         end
     end
     local target_entity_name
@@ -71,11 +71,23 @@ local function modify_tank_legs(grid)
 
     currently_modified_tanks[new_tank.unit_number] = true
     for _, equipment in ipairs(old_tank.grid.equipment) do
-        new_tank.grid.put{
-            name = equipment.name,
-            quality = equipment.quality,
-            position = equipment.position,
-        }
+        if equipment.name == "equipment-ghost" then
+            new_tank.grid.put{
+                name = equipment.ghost_name,
+                quality = equipment.quality,
+                position = equipment.position,
+                ghost = true,
+            }
+        else
+            local new_equipment = new_tank.grid.put{
+                name = equipment.name,
+                quality = equipment.quality,
+                position = equipment.position,
+            }
+            if equipment.to_be_removed then
+                new_tank.grid.order_removal(new_equipment)
+            end
+        end
     end
     currently_modified_tanks[new_tank.unit_number] = nil
     new_tank.set_driver(old_tank.get_driver())
